@@ -227,37 +227,16 @@ bool ImGui_ImplFltk_ProcessEvent(int event)
             bd->MouseButtonsDown = (event == FL_PUSH) ? (bd->MouseButtonsDown | (1 << mouse_button)) : (bd->MouseButtonsDown & ~(1 << mouse_button));
             return true;
         }
-        case FL_KEYUP: 
-        {
-            auto key = Fl::event_key();
-            ImGuiKey imkey = ImGui_ImplFltk_KeycodeToImGuiKey(key);
-            auto state = Fl::event_state();
-            if (state) 
-                ImGui_ImplFltk_UpdateKeyModifiers(state);
-            if (imkey != ImGuiKey_None)
-                io.AddKeyEvent(imkey, (event == FL_KEYUP));
-            return true;
-        }
+        case FL_KEYUP:
         case FL_KEYDOWN:
         {
-            auto text = Fl::event_text();
-            int del;
-            if (Fl::compose(del)) {
-                if (del == 0) {
-                    io.AddInputCharactersUTF8(&text[0]);
-                } else {
-                    Fl::compose_reset();
-                }
-            }
-            else {
-                auto key = Fl::event_key();
-                ImGuiKey imkey = ImGui_ImplFltk_KeycodeToImGuiKey(key);
-                auto state = Fl::event_state();
-                if (state) 
-                    ImGui_ImplFltk_UpdateKeyModifiers(state);
-                if (imkey != ImGuiKey_None)
-                    io.AddKeyEvent(imkey, (event == FL_KEYDOWN));
-            }
+            auto c = Fl::event_text();
+            if (c && event == FL_KEYDOWN)
+                io.AddInputCharactersUTF8(c);
+            ImGuiKey imkey = ImGui_ImplFltk_KeycodeToImGuiKey(Fl::event_key());
+            auto state = Fl::event_state();
+            ImGui_ImplFltk_UpdateKeyModifiers(state);
+            io.AddKeyEvent(imkey, (event == FL_KEYUP));
             return true;
         }
         case FL_ENTER:
