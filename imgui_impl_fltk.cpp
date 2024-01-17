@@ -51,7 +51,7 @@ static const char* ImGui_ImplFltk_GetClipboardText(void*)
 
 static void ImGui_ImplFltk_SetClipboardText(void*, const char* text)
 {
-    Fl::copy(text, strlen(text));
+    Fl::copy(text, 1);
 }
 
 static ImGuiKey ImGui_ImplFltk_KeycodeToImGuiKey(int keycode)
@@ -71,7 +71,7 @@ static ImGuiKey ImGui_ImplFltk_KeycodeToImGuiKey(int keycode)
         case FL_Delete: return ImGuiKey_Delete;
         case FL_BackSpace: return ImGuiKey_Backspace;
         case ' ': return ImGuiKey_Space;
-        case '\n': return ImGuiKey_Enter;
+        case FL_Enter: return ImGuiKey_Enter;
         case FL_Escape: return ImGuiKey_Escape;
         case '\'': return ImGuiKey_Apostrophe;
         case ',': return ImGuiKey_Comma;
@@ -177,10 +177,10 @@ static ImGuiKey ImGui_ImplFltk_KeycodeToImGuiKey(int keycode)
 static void ImGui_ImplFltk_UpdateKeyModifiers(int key_mods)
 {
     ImGuiIO& io = ImGui::GetIO();
-    io.AddKeyEvent(ImGuiMod_Ctrl, (key_mods & FL_CTRL) != 0);
-    io.AddKeyEvent(ImGuiMod_Shift, (key_mods & FL_SHIFT) != 0);
-    io.AddKeyEvent(ImGuiMod_Alt, (key_mods & FL_ALT) != 0);
-    io.AddKeyEvent(ImGuiMod_Super, (key_mods & FL_COMMAND) != 0);
+    io.AddKeyEvent(ImGuiMod_Ctrl, (key_mods & FL_CTRL) == FL_CTRL);
+    io.AddKeyEvent(ImGuiMod_Shift, (key_mods & FL_SHIFT) == FL_SHIFT);
+    io.AddKeyEvent(ImGuiMod_Alt, (key_mods & FL_ALT) == FL_ALT);
+    io.AddKeyEvent(ImGuiMod_Super, (key_mods & FL_COMMAND) == FL_COMMAND);
 }
 
 // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -207,7 +207,7 @@ bool ImGui_ImplFltk_ProcessEvent(int event)
         {
 
             float wheel_x = -(float)Fl::event_dx();
-            float wheel_y = (float)Fl::event_dy();
+            float wheel_y = -(float)Fl::event_dy();
             io.AddMouseSourceEvent(ImGuiMouseSource_Mouse);
             io.AddMouseWheelEvent(wheel_x, wheel_y);
             return true;
@@ -227,8 +227,24 @@ bool ImGui_ImplFltk_ProcessEvent(int event)
             bd->MouseButtonsDown = (event == FL_PUSH) ? (bd->MouseButtonsDown | (1 << mouse_button)) : (bd->MouseButtonsDown & ~(1 << mouse_button));
             return true;
         }
+        case FL_PASTE: {
+            io.AddInputCharactersUTF8(Fl::event_text());
+            return true;
+        }
+        case FL_KEYUP: 
+        {
+            auto key = Fl::event_key();
+            ImGuiKey imkey = ImGui_ImplFltk_KeycodeToImGuiKey(key);
+            auto state = Fl::event_state();
+            ImGui_ImplFltk_UpdateKeyModifiers(state);
+            io.AddKeyEvent(imkey, (event == FL_KEYUP));
+            bd->Window->handle(FL_UNFOCUS);
+            if (key == 'v' && state == FL_CTRL) {
+                bd->Window->handle(FL_PASTE);
+            }
+            return true;
+        }
         case FL_KEYDOWN:
-        case FL_KEYUP:
         {
             auto c = Fl::event_text();
             if (c && event == FL_KEYDOWN)
@@ -236,7 +252,7 @@ bool ImGui_ImplFltk_ProcessEvent(int event)
             ImGuiKey imkey = ImGui_ImplFltk_KeycodeToImGuiKey(Fl::event_key());
             auto state = Fl::event_state();
             ImGui_ImplFltk_UpdateKeyModifiers(state);
-            io.AddKeyEvent(imkey, (event == FL_KEYUP));
+            io.AddKeyEvent(imkey, (event == FL_KEYDOWN));
             return true;
         }
         case FL_ENTER:
