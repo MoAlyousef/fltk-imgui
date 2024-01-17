@@ -227,8 +227,8 @@ bool ImGui_ImplFltk_ProcessEvent(int event)
             bd->MouseButtonsDown = (event == FL_PUSH) ? (bd->MouseButtonsDown | (1 << mouse_button)) : (bd->MouseButtonsDown & ~(1 << mouse_button));
             return true;
         }
-        case FL_KEYUP:
         case FL_KEYDOWN:
+        case FL_KEYUP:
         {
             auto c = Fl::event_text();
             if (c && event == FL_KEYDOWN)
@@ -244,16 +244,15 @@ bool ImGui_ImplFltk_ProcessEvent(int event)
         case FL_FOCUS:
         case FL_UNFOCUS:
         {
-            Uint8 window_event = event;
-            if (window_event == FL_ENTER)
+            if (event == FL_ENTER)
             {
                 bd->PendingMouseLeaveFrame = 0;
             }
-            if (window_event == FL_LEAVE)
+            if (event == FL_LEAVE)
                 bd->PendingMouseLeaveFrame = ImGui::GetFrameCount() + 1;
-            if (window_event == FL_FOCUS)
+            if (event == FL_FOCUS)
                 io.AddFocusEvent(true);
-            else if (window_event == FL_UNFOCUS)
+            else if (event == FL_UNFOCUS)
                 io.AddFocusEvent(false);
             return true;
         }
