@@ -15,6 +15,8 @@
 #include <FL/Fl_Gl_Window.H>
 #include <FL/Fl_Double_Window.H>
 #include <GL/gl.h>
+#include <chrono>
+#include <thread>
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
 #pragma comment(lib, "legacy_stdio_definitions")
@@ -43,22 +45,22 @@ int main(int, char**)
 
     // Create window with graphics context
     Fl_Double_Window *win = new Fl_Double_Window(1280, 720, "Dear ImGui FLTK+OpenGL3 example");
-    GlWin* window = new GlWin(5, 5, 1270, 710);
-    window->mode(FL_OPENGL3);
-    if (window == nullptr)
+    GlWin* glwin = new GlWin(5, 5, 1270, 710);
+    glwin->mode(FL_OPENGL3);
+    if (glwin == nullptr)
         return 1;
-    window->end();
+    glwin->end();
     win->end();
     win->show();
-    window->make_current();
-    window->swap_interval(1); // enable vsync
+    glwin->make_current();
+    glwin->swap_interval(1); // enable vsync
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsLight();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplFltk_InitForOpenGL(window);
+    ImGui_ImplFltk_InitForOpenGL(glwin);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Our state
@@ -113,12 +115,16 @@ int main(int, char**)
 
         // Rendering
         ImGui::Render();
-        int display_w = window->pixel_w(), display_h = window->pixel_h();
+        int display_w = glwin->pixel_w(), display_h = glwin->pixel_h();
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        window->swap_buffers();
+        glwin->swap_buffers();
+        // here we force a redraw at our own rate, 
+        // otherwise our app will only update when it detects an event
+        win->redraw();
+        std::this_thread::sleep_for(std::chrono::milliseconds(30)); // this is our rate
     }
 
     // Cleanup
@@ -126,7 +132,8 @@ int main(int, char**)
     ImGui_ImplFltk_Shutdown();
     ImGui::DestroyContext();
 
-    delete window;
+    // deleting the window will also delete the glwin
+    delete win;
 
     return 0;
 }
