@@ -11,17 +11,16 @@
 #endif
 
 // FLTK
-#include <FL/Fl.H>
 #include <FL/Enumerations.H>
+#include <FL/Fl.H>
 #include <FL/Fl_Gl_Window.H>
 #include <FL/Fl_Input.H>
 #include <stdint.h>
 
-Fl_Input *gInput;
-
 // FLTK Data
 struct ImGui_ImplFltk_Data {
     Fl_Gl_Window *Window;
+    Fl_Input *Input;
     Fl_Timestamp Time;
     int MouseButtonsDown;
     Fl_Cursor MouseCursors[ImGuiMouseCursor_COUNT];
@@ -52,9 +51,9 @@ static ImGui_ImplFltk_Data *ImGui_ImplFltk_GetBackendData() {
 // Functions
 static const char *ImGui_ImplFltk_GetClipboardText(void *) {
     ImGui_ImplFltk_Data *bd = ImGui_ImplFltk_GetBackendData();
-    Fl::paste(*gInput, 1);
-    bd->ClipboardTextData = (char *)gInput->value();
-    gInput->value("");
+    Fl::paste(*bd->Input, 1);
+    bd->ClipboardTextData = (char *)bd->Input->value();
+    bd->Input->value("");
     return bd->ClipboardTextData;
 }
 
@@ -391,7 +390,6 @@ bool ImGui_ImplFltk_ProcessEvent(int event) {
 }
 
 static bool ImGui_ImplFltk_Init(Fl_Gl_Window *window) {
-    gInput = new Fl_Input(0, 0, 0, 0);
     ImGuiIO &io = ImGui::GetIO();
     IM_ASSERT(io.BackendPlatformUserData == nullptr &&
               "Already initialized a platform backend!");
@@ -410,6 +408,7 @@ static bool ImGui_ImplFltk_Init(Fl_Gl_Window *window) {
                                           // requests (optional, rarely used)
 
     bd->Window = window;
+    bd->Input = new Fl_Input(0, 0, 0, 0);
     bd->Time = Fl::now();
     bd->MouseCanUseGlobalState = mouse_can_use_global_state;
 
